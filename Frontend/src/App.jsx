@@ -10,7 +10,7 @@ export default function App() {
 
       {/* Video Player */}
       <div style={{ padding: "20px" }}>
-        <VideoPlayer src="http://localhost:3000/videos/video_1774172186487/master.m3u8" />
+        <VideoPlayer src="http://localhost:3000/videos/video_1779626954875/master.m3u8" />
       </div>
     </div>
   );
