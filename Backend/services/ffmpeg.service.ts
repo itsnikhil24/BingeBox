@@ -4,7 +4,10 @@ import fs from "fs";
 
 export const processVideo = (
   inputPath: string
-): Promise<string> => {
+): Promise<{
+  folderName: string;
+  outputDir: string;
+}> => {
   return new Promise((resolve, reject) => {
     try {
       const folderName = `video_${Date.now()}`;
@@ -20,10 +23,10 @@ export const processVideo = (
 
         "-filter_complex",
         "[0:v]split=4[v1][v2][v3][v4];" +
-          "[v1]scale=w=640:h=360:force_original_aspect_ratio=decrease[v360];" +
-          "[v2]scale=w=842:h=480:force_original_aspect_ratio=decrease[v480];" +
-          "[v3]scale=w=1280:h=720:force_original_aspect_ratio=decrease[v720];" +
-          "[v4]scale=w=1920:h=1080:force_original_aspect_ratio=decrease[v1080]",
+        "[v1]scale=w=640:h=360:force_original_aspect_ratio=decrease[v360];" +
+        "[v2]scale=w=842:h=480:force_original_aspect_ratio=decrease[v480];" +
+        "[v3]scale=w=1280:h=720:force_original_aspect_ratio=decrease[v720];" +
+        "[v4]scale=w=1920:h=1080:force_original_aspect_ratio=decrease[v1080]",
 
         // 360p 
         "-map",
@@ -121,7 +124,7 @@ export const processVideo = (
         "-b:a:3",
         "192k",
 
-      
+
         "-preset",
         "veryfast",
 
@@ -131,11 +134,11 @@ export const processVideo = (
         "-hls_playlist_type",
         "vod",
 
-    
+
         "-master_pl_name",
         "master.m3u8",
 
-        
+
         "-var_stream_map",
         "v:0,a:0 v:1,a:1 v:2,a:2 v:3,a:3",
 
@@ -157,7 +160,6 @@ export const processVideo = (
         if (code === 0) {
           console.log("FFmpeg Completed");
 
-          
           const names = ["360p", "480p", "720p", "1080p"];
 
           names.forEach((name, index) => {
@@ -182,7 +184,10 @@ export const processVideo = (
 
           fs.writeFileSync(masterPath, masterContent);
 
-          resolve(folderName);
+          resolve({
+            folderName,
+            outputDir,
+          });
         } else {
           reject("Video processing failed");
         }
