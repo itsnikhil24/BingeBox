@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { supabase } from "../config/supabase.js";
+import { supabaseAdmin } from "../config/supabase.js";
 
 export const uploadFolder = async (folderPath: string, folderName: string) => {
   const files = fs.readdirSync(folderPath);
@@ -13,7 +13,7 @@ export const uploadFolder = async (folderPath: string, folderName: string) => {
     const fileBuffer = fs.readFileSync(fullPath);
     const storagePath = `${folderName}/${file}`;
 
-    const { error } = await supabase.storage.from("videos").upload(storagePath, fileBuffer, {
+    const { error } = await supabaseAdmin.storage.from("videos").upload(storagePath, fileBuffer, {
       contentType: getContentType(file),
       upsert: true,
     });
@@ -21,7 +21,7 @@ export const uploadFolder = async (folderPath: string, folderName: string) => {
     if (error) throw error;
   }
 
-  const { data } = supabase.storage
+  const { data } = supabaseAdmin.storage
     .from("videos")
     .getPublicUrl(`${folderName}/master.m3u8`);
 
