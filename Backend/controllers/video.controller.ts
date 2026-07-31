@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import fs from "fs";
+import supabase from "../config/supabase.js";
 import { processVideo } from "../services/ffmpeg.service";
 import { uploadFolder } from "../services/storage.service";
-import { supabase } from "../config/supabase.js";
 
 export const uploadVideo = async (req: Request, res: Response) => {
   let outputDir = "";
@@ -22,8 +22,6 @@ export const uploadVideo = async (req: Request, res: Response) => {
 
     const title = req.body.title || "Untitled Video";
     const description = req.body.description || null;
-
-    
     const userId = req.body.user_id;
 
     if (!userId) {
@@ -32,16 +30,12 @@ export const uploadVideo = async (req: Request, res: Response) => {
         message: "User ID is required",
       });
     }
-
-    // 1) Process video with FFmpeg
     const result = await processVideo(file.path);
     const folderName = result.folderName;
     outputDir = result.outputDir;
 
-    // 2) Upload generated HLS files to Supabase Storage
     const streamUrl = await uploadFolder(outputDir, folderName);
 
-    // 3) Save video metadata in Supabase database
     const { data: videoRow, error: dbError } = await supabase
       .from("videos")
       .insert([
@@ -59,18 +53,10 @@ export const uploadVideo = async (req: Request, res: Response) => {
       .select()
       .single();
 
-    if (dbError) {
-      throw dbError;
-    }
+    if (dbError) throw dbError;
 
-    // 4) Clean up local files
-    if (fs.existsSync(inputFilePath)) {
-      fs.unlinkSync(inputFilePath);
-    }
-
-    if (fs.existsSync(outputDir)) {
-      fs.rmSync(outputDir, { recursive: true, force: true });
-    }
+    if (fs.existsSync(inputFilePath)) fs.unlinkSync(inputFilePath);
+    if (fs.existsSync(outputDir)) fs.rmSync(outputDir, { recursive: true, force: true });
 
     return res.status(200).json({
       success: true,
@@ -84,13 +70,8 @@ export const uploadVideo = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Upload Error:", error);
 
-    if (inputFilePath && fs.existsSync(inputFilePath)) {
-      fs.unlinkSync(inputFilePath);
-    }
-
-    if (outputDir && fs.existsSync(outputDir)) {
-      fs.rmSync(outputDir, { recursive: true, force: true });
-    }
+    if (inputFilePath && fs.existsSync(inputFilePath)) fs.unlinkSync(inputFilePath);
+    if (outputDir && fs.existsSync(outputDir)) fs.rmSync(outputDir, { recursive: true, force: true });
 
     return res.status(500).json({
       success: false,
