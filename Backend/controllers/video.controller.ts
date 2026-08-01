@@ -163,3 +163,49 @@ if (variantError) {
     });
   }
 };
+
+export const getAllVideos = async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("videos")
+      .select(`
+        id,
+        title,
+        description,
+        thumbnail_url,
+        master_playlist,
+        duration,
+        visibility,
+        status,
+        created_at,
+        profiles!videos_user_id_fkey(
+          id,
+          username,
+          full_name
+        )
+      `)
+      .eq("status", "ready")
+      .eq("visibility", "public")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: data.length,
+      videos: data,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch videos",
+    });
+  }
+};
