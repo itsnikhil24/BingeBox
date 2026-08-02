@@ -1,0 +1,49 @@
+/* ============================================================
+   BingeBox — Design Tokens
+   Theme: late-night cinema. A dark screening-room backdrop,
+   marquee-gold accent, and video cards cut like ticket stubs.
+   Import this once (e.g. in index.css / App.css) before any
+   other component stylesheet.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* --- Color: screening room --- */
+  --bb-bg: #0f0d10;            /* house lights down */
+  --bb-bg-raised: #17141a;     /* cards, navbar */
+  --bb-bg-inset: #201b23;      /* inputs, wells */
+  --bb-border: #2c2530;
+
+  --bb-gold: #f2b705;          /* marquee bulbs */
+  --bb-gold-dim: #b58a05;
+  --bb-crimson: #c1121f;       /* velvet curtain, destructive */
+  --bb-crimson-dim: #8c0f19;
+
+  --bb-text: #f5f1e8;          /* warm projector white */
+  --bb-text-muted: #a39a8f;
+  --bb-text-faint: #6f6860;
+
+  /* --- Type --- */
+  --bb-font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --bb-font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* --- Shape & motion --- */
+  --bb-radius-sm: 6px;
+  --bb-radius-md: 12px;
+  --bb-radius-lg: 18px;
+  --bb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --bb-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --bb-shadow-pop: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bb-bg);
+  color: var(--bb-text);
+  font-family: var(--bb-font-body);
+}
