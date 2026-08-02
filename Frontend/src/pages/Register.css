@@ -1,0 +1,107 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f3f4f6; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Main Form Card */
+.container {
+  background-color: #ffffff;
+  padding: 2.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  min-width: 500px;
+  box-sizing: border-box;
+}
+
+/* Typography */
+.container h1 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #111827;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Form Layout */
+.container form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Input Fields */
+.container input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #1f2937;
+  background-color: #f9fafb;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.container input::placeholder {
+  color: #9ca3af;
+}
+
+/* Input Focus States */
+.container input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+/* Submit Button */
+.container button {
+  margin-top: 0.5rem;
+  background-color: #4f46e5;
+  color: #ffffff;
+  border: none;
+  padding: 0.875rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.container button:hover {
+  background-color: #4338ca;
+}
+
+.container button:active {
+  transform: scale(0.98);
+}
+
+/* Bottom Text & Link */
+.container p {
+  margin-top: 1.75rem;
+  margin-bottom: 0;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.container p a {
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.container p a:hover {
+  color: #4338ca;
+  text-decoration: underline;
+}

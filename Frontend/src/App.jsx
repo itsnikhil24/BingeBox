@@ -1,21 +1,54 @@
-import React from "react";
-import Navbar from "./components/Navbar";
-import VideoPlayer from "./components/VideoPlayer";
-import AnimatedBackground from "./components/AnimatedBackground";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-export default function App() {
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+// import Watch from "./pages/Watch";
+// import ProtectedRoute from "./routes/ProtectedRoute";
+
+function App() {
   return (
-    <div>
-      <AnimatedBackground /> 
-      {/* Navbar at top */}
-      <Navbar />
+    <BrowserRouter>
 
-      {/* Video Player */}
-      <div style={{ padding: "20px" }}>
-        <VideoPlayer src="http://localhost:3000/videos/video_1781702510585/master.m3u8" />
-      </div>
-    </div>
+      <Routes>
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+        <Route
+          path="/dashboard"
+          element={<Dashboard />}
+        />
+
+        
+
+      </Routes>
+
+    </BrowserRouter>
   );
 }
+{/* <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-// /Users/nikhilsharma/Documents/Projects/BingeBox/Backend/output/video_
+        <Route
+          path="/watch/:id"
+          element={
+            <ProtectedRoute>
+              <Watch />
+            </ProtectedRoute>
+          }
+        /> */}
+
+export default App;
