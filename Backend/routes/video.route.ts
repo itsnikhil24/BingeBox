@@ -3,8 +3,8 @@ import multer from "multer";
 import {
   uploadVideo,
   getAllVideos,
+  getVideoById,
 } from "../controllers/video.controller";
-
 
 const router = express.Router();
 
@@ -17,5 +17,7 @@ const upload = multer({
 router.post("/upload", upload.single("video"), uploadVideo);
 router.get("/", getAllVideos);
 
-export default router;
+// Single video route — must come after "/" since both are GET
+router.get("/:id", getVideoById);
 
+export default router;

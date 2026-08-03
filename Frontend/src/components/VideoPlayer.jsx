@@ -1,7 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import Hls from "hls.js";
 import "./VideoPlayer.css";
-import { Volume1, Volume2, VolumeX } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Volume1,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
+  Settings,
+} from "lucide-react";
 
 const VideoPlayer = ({ src }) => {
   const videoRef = useRef(null);
@@ -16,11 +25,13 @@ const VideoPlayer = ({ src }) => {
   const [showControls, setShowControls] = useState(true);
   const [qualities, setQualities] = useState([]);
   const [currentQuality, setCurrentQuality] = useState(-1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // 🔥 HLS Setup
+  // HLS Setup
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
@@ -53,7 +64,7 @@ const VideoPlayer = ({ src }) => {
     };
   }, [src]);
 
-  // ▶️ Play / Pause
+  // Play / Pause
   const togglePlay = () => {
     const video = videoRef.current;
     if (video.paused) {
@@ -65,7 +76,7 @@ const VideoPlayer = ({ src }) => {
     }
   };
 
-  // ⏱ Time Update
+  // Time Update
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video || !video.duration) return;
@@ -74,7 +85,7 @@ const VideoPlayer = ({ src }) => {
     setCurrentTime(video.currentTime);
   };
 
-  // 📦 Buffer Update
+  // Buffer Update
   const handleProgress = () => {
     const video = videoRef.current;
     if (!video || !video.duration || video.buffered.length === 0) return;
@@ -83,7 +94,7 @@ const VideoPlayer = ({ src }) => {
     setBuffered((bufferedEnd / video.duration) * 100);
   };
 
-  // 🎯 Seek
+  // Seek
   const handleSeek = (e) => {
     const video = videoRef.current;
     const value = e.target.value;
@@ -91,7 +102,7 @@ const VideoPlayer = ({ src }) => {
     setProgress(value);
   };
 
-  // 🔊 Volume
+  // Volume
   const handleVolumeChange = (e) => {
     const video = videoRef.current;
     const newVolume = parseFloat(e.target.value);
@@ -100,7 +111,7 @@ const VideoPlayer = ({ src }) => {
     setIsMuted(newVolume === 0);
   };
 
-  // 🔇 Mute
+  // Mute
   const toggleMute = () => {
     const video = videoRef.current;
     if (isMuted || volume === 0) {
@@ -114,7 +125,7 @@ const VideoPlayer = ({ src }) => {
     }
   };
 
-  // 🖥 Fullscreen
+  // Fullscreen
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().catch(console.log);
@@ -123,7 +134,16 @@ const VideoPlayer = ({ src }) => {
     }
   };
 
-  // 🎯 Auto-hide controls
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // Auto-hide controls
   useEffect(() => {
     let timeout;
     const handleMouseMove = () => {
@@ -138,7 +158,7 @@ const VideoPlayer = ({ src }) => {
     return () => container.removeEventListener("mousemove", handleMouseMove);
   }, [isPlaying]);
 
-  // 🔥 FIXED QUALITY CHANGE (IMPORTANT)
+  // Quality change
   const changeQuality = (levelIndex) => {
     const video = videoRef.current;
     const hls = hlsRef.current;
@@ -148,15 +168,15 @@ const VideoPlayer = ({ src }) => {
     const wasPlaying = !video.paused;
     const currentTime = video.currentTime;
 
-    video.pause(); // ✅ Pause first
+    video.pause();
 
-    hls.currentLevel = levelIndex; // 🔄 Change quality
+    hls.currentLevel = levelIndex;
 
     hls.once(Hls.Events.LEVEL_SWITCHED, () => {
-      video.currentTime = currentTime; // ✅ restore time
+      video.currentTime = currentTime;
 
       if (wasPlaying) {
-        video.play(); // ▶ resume
+        video.play();
         setIsPlaying(true);
       }
     });
@@ -164,7 +184,7 @@ const VideoPlayer = ({ src }) => {
     setCurrentQuality(levelIndex);
   };
 
-  // ⏰ Format Time
+  // Format Time
   const formatTime = (time) => {
     if (!time || isNaN(time)) return "0:00";
     const m = Math.floor(time / 60);
@@ -179,22 +199,36 @@ const VideoPlayer = ({ src }) => {
         className="video"
         onTimeUpdate={handleTimeUpdate}
         onProgress={handleProgress}
+        onWaiting={() => setIsLoading(true)}
+        onPlaying={() => setIsLoading(false)}
         onLoadedMetadata={() => {
           setDuration(videoRef.current.duration);
+          setIsLoading(false);
         }}
         onClick={togglePlay}
       />
 
-      {!isPlaying && (
-        <div className="center-play" onClick={togglePlay}>
-          ▶
+      {isLoading && (
+        <div className="buffer-spinner" aria-hidden="true">
+          <span className="spinner-ring" />
         </div>
+      )}
+
+      {!isPlaying && !isLoading && (
+        <button className="center-play" onClick={togglePlay} aria-label="Play">
+          <Play size={30} fill="currentColor" />
+        </button>
       )}
 
       <div className={`controls ${showControls ? "show" : ""}`}>
         <div className="progress-container">
           <div className="progress-loaded" style={{ width: `${buffered}%` }} />
           <div className="progress-played" style={{ width: `${progress}%` }} />
+          <div
+            className="progress-thumb"
+            style={{ left: `${progress}%` }}
+            aria-hidden="true"
+          />
           <input
             type="range"
             className="seek"
@@ -203,23 +237,32 @@ const VideoPlayer = ({ src }) => {
             min="0"
             max="100"
             step="0.1"
+            aria-label="Seek"
           />
         </div>
 
         <div className="controls-row">
           <div className="left">
-            <button onClick={togglePlay}>
-              {isPlaying ? "❚❚" : "▶"}
+            <button
+              className="icon-btn"
+              onClick={togglePlay}
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
             </button>
 
             <div className="volume-container">
-              <button onClick={toggleMute}>
+              <button
+                className="icon-btn"
+                onClick={toggleMute}
+                aria-label={isMuted ? "Unmute" : "Mute"}
+              >
                 {volume === 0 || isMuted ? (
-                  <VolumeX size={20} />
+                  <VolumeX size={18} />
                 ) : volume > 0.5 ? (
-                  <Volume2 size={20} />
+                  <Volume2 size={18} />
                 ) : (
-                  <Volume1 size={20} />
+                  <Volume1 size={18} />
                 )}
               </button>
               <input
@@ -230,27 +273,40 @@ const VideoPlayer = ({ src }) => {
                 step="0.05"
                 value={volume}
                 onChange={handleVolumeChange}
+                aria-label="Volume"
               />
             </div>
 
             <span className="time">
-              {formatTime(currentTime)} / {formatTime(duration)}
+              {formatTime(currentTime)} <span className="time-sep">/</span>{" "}
+              {formatTime(duration)}
             </span>
           </div>
 
           <div className="right">
-            <select
-              value={currentQuality}
-              onChange={(e) => changeQuality(Number(e.target.value))}
+            <div className="quality-select">
+              <Settings size={15} className="quality-icon" />
+              <select
+                value={currentQuality}
+                onChange={(e) => changeQuality(Number(e.target.value))}
+                aria-label="Quality"
+              >
+                <option value={-1}>Auto</option>
+                {qualities.map((q) => (
+                  <option key={q.index} value={q.index}>
+                    {q.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              className="icon-btn"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >
-              <option value={-1}>Auto</option>
-              {qualities.map((q) => (
-                <option key={q.index} value={q.index}>
-                  {q.label}
-                </option>
-              ))}
-            </select>
-            <button onClick={toggleFullscreen}>⛶</button>
+              {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+            </button>
           </div>
         </div>
       </div>

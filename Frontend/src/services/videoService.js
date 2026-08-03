@@ -20,3 +20,7 @@ export const uploadVideo = async (formData) => {
 
   return response.data;
 };
+export const getVideoById = async (id) => {
+  const res = await axios.get(`${API}/${id}`);
+  return res.data.video;
+};

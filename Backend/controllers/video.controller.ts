@@ -38,74 +38,70 @@ export const uploadVideo = async (req: Request, res: Response) => {
     outputDir = result.outputDir;
 
     // Upload HLS folder to Supabase Storage
-const streamUrl = await uploadFolder(outputDir, folderName);
+    const streamUrl = await uploadFolder(outputDir, folderName);
 
+    // Insert into videos table
+    const { data: videoRow, error: dbError } = await supabaseAdmin
+      .from("videos")
+      .insert([
+        {
+          user_id: userId,
+          title,
+          description,
+          thumbnail_url: null,
+          master_playlist: streamUrl,
+          duration: null,
+          status: "ready",
+          visibility: "public",
+        },
+      ])
+      .select()
+      .single();
 
+    console.log("Video Insert Error:", dbError);
 
-// Insert into videos table
-const { data: videoRow, error: dbError } = await supabaseAdmin
-  .from("videos")
-  .insert([
-    {
-      user_id: userId,
-      title,
-      description,
-      thumbnail_url: null,
-      master_playlist: streamUrl,
-      duration: null,
-      status: "ready",
-      visibility: "public",
-    },
-  ])
-  .select()
-  .single();
+    if (dbError) {
+      throw dbError;
+    }
 
-console.log("Video Insert Error:", dbError);
+    // Base URL
+    const baseUrl = streamUrl.replace("/master.m3u8", "");
 
-if (dbError) {
-  throw dbError;
-}
+    // Insert variants
+    const { error: variantError } = await supabaseAdmin
+      .from("video_variants")
+      .insert([
+        {
+          video_id: videoRow.id,
+          resolution: "360p",
+          playlist_url: `${baseUrl}/360p.m3u8`,
+          bitrate: 800000,
+        },
+        {
+          video_id: videoRow.id,
+          resolution: "480p",
+          playlist_url: `${baseUrl}/480p.m3u8`,
+          bitrate: 1400000,
+        },
+        {
+          video_id: videoRow.id,
+          resolution: "720p",
+          playlist_url: `${baseUrl}/720p.m3u8`,
+          bitrate: 2800000,
+        },
+        {
+          video_id: videoRow.id,
+          resolution: "1080p",
+          playlist_url: `${baseUrl}/1080p.m3u8`,
+          bitrate: 5000000,
+        },
+      ]);
 
-// Base URL
-const baseUrl = streamUrl.replace("/master.m3u8", "");
+    console.log("Variant Insert Error:", variantError);
 
-// Insert variants
-const { error: variantError } = await supabaseAdmin
-  .from("video_variants")
-  .insert([
-    {
-      video_id: videoRow.id,
-      resolution: "360p",
-      playlist_url: `${baseUrl}/360p.m3u8`,
-      bitrate: 800000,
-    },
-    {
-      video_id: videoRow.id,
-      resolution: "480p",
-      playlist_url: `${baseUrl}/480p.m3u8`,
-      bitrate: 1400000,
-    },
-    {
-      video_id: videoRow.id,
-      resolution: "720p",
-      playlist_url: `${baseUrl}/720p.m3u8`,
-      bitrate: 2800000,
-    },
-    {
-      video_id: videoRow.id,
-      resolution: "1080p",
-      playlist_url: `${baseUrl}/1080p.m3u8`,
-      bitrate: 5000000,
-    },
-  ]);
-
-console.log("Variant Insert Error:", variantError);
-
-if (variantError) {
-  throw variantError;
-}
-
-
+    if (variantError) {
+      throw variantError;
+    }
 
     // Cleanup temporary files
     if (fs.existsSync(inputFilePath)) {
@@ -206,6 +202,60 @@ export const getAllVideos = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch videos",
+    });
+  }
+};
+
+// Fetch a single video by id, including its HLS quality variants,
+// for use on the watch/streaming page.
+export const getVideoById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabaseAdmin
+      .from("videos")
+      .select(`
+        id,
+        title,
+        description,
+        thumbnail_url,
+        master_playlist,
+        duration,
+        visibility,
+        status,
+        created_at,
+        profiles!videos_user_id_fkey(
+          id,
+          username,
+          full_name
+        ),
+        video_variants(
+          resolution,
+          playlist_url,
+          bitrate
+        )
+      `)
+      .eq("id", id)
+      .eq("status", "ready")
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      video: data,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch video",
     });
   }
 };
