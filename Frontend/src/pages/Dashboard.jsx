@@ -3,12 +3,14 @@ import Navbar from "../components/Navbar";
 import VideoCard from "../components/VideoCard";
 import UploadModal from "../components/UploadModal";
 import { getAllVideos } from "../services/videoService";
+import { getCurrentUser } from "../utils/auth";
 import "./dashboard.css";
 
 export default function Dashboard() {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showUpload, setShowUpload] = useState(false);
+    const [user, setUser] = useState(null);
 
     const fetchVideos = async () => {
         try {
@@ -22,12 +24,25 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
+        setUser(getCurrentUser());
         fetchVideos();
     }, []);
 
+    const handleOpenUpload = () => {
+        const currentUser = getCurrentUser();
+
+        if (!currentUser) {
+            alert("Please login to upload a video.");
+            // or: navigate("/login") if you're using react-router
+            return;
+        }
+
+        setShowUpload(true);
+    };
+
     return (
         <>
-            <Navbar openUpload={() => setShowUpload(true)} />
+            <Navbar isLoggedIn={!!user} openUpload={handleOpenUpload} />
 
             <div className="dashboard">
 
@@ -68,7 +83,7 @@ export default function Dashboard() {
 
             </div>
 
-            {showUpload && (
+            {showUpload && user && (
                 <UploadModal
                     close={() => setShowUpload(false)}
                     refreshVideos={fetchVideos}

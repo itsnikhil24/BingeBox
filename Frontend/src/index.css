@@ -1,5 +1,18 @@
-@import "tailwindcss";
-*{
-    margin: 0;
-    padding: 0;
+/* src/index.css */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bb-bg, #121212); /* Matches your dark theme */
+  overflow-x: hidden; /* Prevents horizontal scrolling */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: block; /* Overrides any default flex/grid centering */
 }

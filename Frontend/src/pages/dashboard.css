@@ -94,3 +94,46 @@
     animation: none;
   }
 }
+
+.upload-wrapper {
+  position: relative;
+}
+
+.login-prompt {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #1e1e1e;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+}
+
+.login-btn {
+  background: #e50914;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.login-btn:hover {
+  background: #b0060f;
+}
+
+.prompt-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
