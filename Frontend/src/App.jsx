@@ -4,18 +4,16 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Watch from "./pages/Watch";
-// import ProtectedRoute from "./routes/ProtectedRoute";
+import LandingPage from "./pages/LandingPage";
 
 function App() {
   return (
     <BrowserRouter>
 
       <Routes>
+        <Route path="/" element={<LandingPage />} />
 
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/login" element={<Login />} />
 
         <Route
           path="/register"
@@ -25,7 +23,7 @@ function App() {
           path="/dashboard"
           element={<Dashboard />}
         />
-        <Route path="/watch/:id" element={<Watch />} />   {/* added */}
+        <Route path="/watch/:id" element={<Watch />} />
 
 
 
@@ -34,22 +32,4 @@ function App() {
     </BrowserRouter>
   );
 }
-{/* <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/watch/:id"
-          element={
-            <ProtectedRoute>
-              <Watch />
-            </ProtectedRoute>
-          }
-        /> */}
-
 export default App;
