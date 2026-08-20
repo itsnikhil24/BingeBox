@@ -1,0 +1,382 @@
+[data-slot="dialog-overlay"] {
+  position: fixed !important;
+  inset: 0 !important;
+
+  z-index: 9998 !important;
+
+  /* lighter dark overlay */
+  background: rgba(5, 4, 5, 0.45) !important;
+
+  /* very subtle blur */
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+}
+
+
+/* ---------- Dialog ---------- */
+
+.auth-dialog {
+  position: fixed !important;
+
+  left: 50% !important;
+  top: 50% !important;
+
+  transform: translate(-50%, -50%) !important;
+
+  z-index: 9999 !important;
+
+  width: min(92vw, 430px) !important;
+
+  max-width: 430px !important;
+
+  max-height: 90vh !important;
+
+  overflow-y: auto !important;
+
+  padding: 34px !important;
+
+  border: 1px solid rgba(255, 193, 69, 0.16) !important;
+
+  border-radius: 18px !important;
+
+  color: #f3eae0 !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(45, 29, 33, 0.88),
+      rgba(25, 16, 18, 0.94)
+    ) !important;
+
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 0 60px rgba(255, 193, 69, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+
+  backdrop-filter: blur(24px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(130%) !important;
+
+  font-family: "Work Sans", sans-serif !important;
+
+  outline: none !important;
+}
+
+/* Amber glow at top */
+
+.auth-dialog::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 18%;
+  right: 18%;
+
+  height: 2px;
+
+  border-radius: 999px;
+
+  background: #ffc145;
+
+  box-shadow:
+    0 0 10px rgba(255, 193, 69, 0.9),
+    0 0 28px rgba(255, 193, 69, 0.25);
+}
+
+
+/* ---------- Close button ---------- */
+
+/* shadcn close button */
+
+.auth-dialog > button {
+  position: absolute !important;
+
+  top: 14px !important;
+  right: 14px !important;
+
+  width: 32px !important;
+  height: 32px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border: 1px solid rgba(180, 154, 160, 0.15) !important;
+
+  border-radius: 50% !important;
+
+  background: rgba(18, 13, 15, 0.45) !important;
+
+  color: #b49aa0 !important;
+
+  opacity: 1 !important;
+
+  cursor: pointer !important;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease !important;
+}
+
+.auth-dialog > button:hover {
+  color: #ffc145 !important;
+
+  background: rgba(255, 193, 69, 0.08) !important;
+
+  border-color: rgba(255, 193, 69, 0.35) !important;
+
+  transform: rotate(90deg) !important;
+}
+
+
+/* ---------- Header ---------- */
+
+.auth-header {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  align-items: center !important;
+
+  text-align: center !important;
+
+  margin-bottom: 22px !important;
+}
+
+
+/* ---------- Title ---------- */
+
+.auth-title {
+  margin: 0 !important;
+
+  color: #ffc145 !important;
+
+  font-family: "Bebas Neue", sans-serif !important;
+
+  font-size: 48px !important;
+
+  font-weight: 400 !important;
+
+  letter-spacing: 0.12em !important;
+
+  line-height: 1 !important;
+
+  text-shadow:
+    0 0 20px rgba(255, 193, 69, 0.15) !important;
+}
+
+
+/* ---------- Description ---------- */
+
+.auth-description {
+  margin-top: 10px !important;
+
+  color: #b49aa0 !important;
+
+  font-size: 14px !important;
+
+  line-height: 1.5 !important;
+}
+
+
+/* ---------- Form ---------- */
+
+.auth-form {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  gap: 16px !important;
+
+  width: 100% !important;
+}
+
+
+/* ---------- Fields ---------- */
+
+.auth-field {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  gap: 7px !important;
+
+  width: 100% !important;
+}
+
+.auth-field label {
+  color: #f3eae0 !important;
+
+  font-size: 12px !important;
+
+  font-weight: 600 !important;
+
+  letter-spacing: 0.06em !important;
+
+  text-transform: uppercase !important;
+}
+
+
+/* ---------- Inputs ---------- */
+
+.auth-field input {
+  width: 100% !important;
+
+  height: 48px !important;
+
+  padding: 0 14px !important;
+
+  border: 1px solid #3a2a2d !important;
+
+  border-radius: 7px !important;
+
+  outline: none !important;
+
+  background: rgba(18, 13, 15, 0.62) !important;
+
+  color: #f3eae0 !important;
+
+  font-family: "Work Sans", sans-serif !important;
+
+  font-size: 14px !important;
+
+  box-sizing: border-box !important;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease !important;
+}
+
+.auth-field input::placeholder {
+  color: #7a6469 !important;
+}
+
+.auth-field input:hover {
+  border-color: #60484d !important;
+}
+
+.auth-field input:focus {
+  border-color: #ffc145 !important;
+
+  background: rgba(18, 13, 15, 0.78) !important;
+
+  box-shadow:
+    0 0 0 2px rgba(255, 193, 69, 0.08),
+    0 0 20px rgba(255, 193, 69, 0.08) !important;
+}
+
+
+/* ---------- Submit ---------- */
+
+.auth-submit {
+  width: 100% !important;
+
+  height: 48px !important;
+
+  margin-top: 4px !important;
+
+  border: 1px solid rgba(255, 193, 69, 0.8) !important;
+
+  border-radius: 7px !important;
+
+  background: #ffc145 !important;
+
+  color: #120d0f !important;
+
+  font-family: "Work Sans", sans-serif !important;
+
+  font-size: 14px !important;
+
+  font-weight: 700 !important;
+
+  cursor: pointer !important;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease !important;
+}
+
+.auth-submit:hover {
+  background: #ffd064 !important;
+
+  transform: translateY(-1px) !important;
+
+  box-shadow:
+    0 8px 28px rgba(255, 193, 69, 0.22) !important;
+}
+
+.auth-submit:active {
+  transform: translateY(0) !important;
+}
+
+.auth-submit:disabled {
+  opacity: 0.6 !important;
+
+  cursor: not-allowed !important;
+
+  transform: none !important;
+
+  box-shadow: none !important;
+}
+
+
+/* ---------- Login/Register switch ---------- */
+
+.auth-switch {
+  margin: 5px 0 0 !important;
+
+  text-align: center !important;
+
+  color: #7a6469 !important;
+
+  font-size: 13px !important;
+}
+
+.auth-switch button {
+  padding: 0 !important;
+
+  border: none !important;
+
+  background: transparent !important;
+
+  color: #ffc145 !important;
+
+  font-family: "Work Sans", sans-serif !important;
+
+  font-size: 13px !important;
+
+  font-weight: 600 !important;
+
+  cursor: pointer !important;
+}
+
+.auth-switch button:hover {
+  color: #ffd064 !important;
+
+  text-decoration: underline !important;
+}
+
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 520px) {
+
+  .auth-dialog {
+    width: calc(100vw - 30px) !important;
+
+    max-width: none !important;
+
+    padding: 28px 22px !important;
+
+    border-radius: 16px !important;
+  }
+
+  .auth-title {
+    font-size: 42px !important;
+  }
+}

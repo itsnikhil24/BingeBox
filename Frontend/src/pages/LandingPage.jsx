@@ -1,5 +1,17 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Play, Upload, Zap, Film, Users, ShieldCheck } from "lucide-react";
+
+import {
+  Play,
+  Upload,
+  Zap,
+  Film,
+  Users,
+  ShieldCheck,
+} from "lucide-react";
+
+import AuthDialog from "../components/AuthDialog";
+
 import "./LandingPage.css";
 
 function LogoMark({ size = 24 }) {
@@ -108,6 +120,19 @@ function SprocketStrip({ count = 60 }) {
 }
 
 export default function LandingPage() {
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+
+  const openLogin = () => {
+    setAuthMode("login");
+    setAuthOpen(true);
+  };
+
+  const openRegister = () => {
+    setAuthMode("register");
+    setAuthOpen(true);
+  };
+
   return (
     <div className="bw-page">
       <header className="site-header">
@@ -122,12 +147,21 @@ export default function LandingPage() {
             <Link to="/dashboard">Browse</Link>
           </div>
           <div className="nav-cta">
-            <Link to="/login" className="btn btn-ghost">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={openLogin}
+            >
               Log in
-            </Link>
-            <Link to="/register" className="btn btn-marquee">
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-marquee"
+              onClick={openRegister}
+            >
               Get started
-            </Link>
+            </button>
           </div>
         </nav>
       </header>
@@ -147,10 +181,14 @@ export default function LandingPage() {
             <p className="hero-sub">{pageDescription}</p>
 
             <div className="hero-cta">
-              <Link to="/register" className="btn btn-marquee btn-lg">
+              <button
+                type="button"
+                className="btn btn-marquee btn-lg"
+                onClick={openRegister}
+              >
                 <Play size={16} />
                 Start watching free
-              </Link>
+              </button>
               <Link to="/dashboard" className="btn btn-ghost btn-lg">
                 Explore the feed
               </Link>
@@ -226,12 +264,23 @@ export default function LandingPage() {
             </h2>
             <p>Create your free account and put your first video on screen today.</p>
             <div className="cta-buttons">
-              <Link to="/register" className="btn btn-red btn-lg">
+
+              <button
+                type="button"
+                className="btn btn-red btn-lg"
+                onClick={openRegister}
+              >
                 Create account
-              </Link>
-              <Link to="/login" className="btn btn-ghost btn-lg">
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-ghost btn-lg"
+                onClick={openLogin}
+              >
                 I already have one
-              </Link>
+              </button>
+
             </div>
           </div>
         </section>
@@ -258,6 +307,11 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      <AuthDialog
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        initialMode={authMode}
+      />
     </div>
   );
 }
