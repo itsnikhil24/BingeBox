@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { supabaseAdmin } from "../config/supabase.js";
+import { supabaseAdmin } from "../config/supabase";
 
 export const uploadFolder = async (folderPath: string, folderName: string) => {
   const files = fs.readdirSync(folderPath);

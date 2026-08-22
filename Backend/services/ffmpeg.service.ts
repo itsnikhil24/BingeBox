@@ -148,7 +148,7 @@ export const processVideo = (
         `${outputDir}/%v.m3u8`,
       ];
 
-      console.log("Running FFmpeg...");
+     
 
       const ffmpeg = spawn("ffmpeg", args);
 
@@ -158,7 +158,7 @@ export const processVideo = (
 
       ffmpeg.on("close", (code) => {
         if (code === 0) {
-          console.log("FFmpeg Completed");
+      
 
           const names = ["360p", "480p", "720p", "1080p"];
 

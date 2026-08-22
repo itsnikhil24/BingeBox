@@ -8,19 +8,32 @@ export const getAllVideos = async () => {
 };
 
 export const uploadVideo = async (formData) => {
+  const sessionString = localStorage.getItem("session");
+
+  if (!sessionString) {
+    throw new Error("Session not found. Please login again.");
+  }
+
+  const session = JSON.parse(sessionString);
+
+  if (!session.access_token) {
+    throw new Error("Access token not found. Please login again.");
+  }
+
   const response = await axios.post(
     `${API}/upload`,
     formData,
     {
       headers: {
-        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${session.access_token}`,
       },
     }
   );
 
   return response.data;
 };
+
 export const getVideoById = async (id) => {
-  const res = await axios.get(`${API}/${id}`);
-  return res.data.video;
+  const response = await axios.get(`${API}/${id}`);
+  return response.data.video;
 };
