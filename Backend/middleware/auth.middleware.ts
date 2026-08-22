@@ -18,9 +18,7 @@ export const authenticateUser = async (
 
     const token = authHeader.replace("Bearer ", "");
 
-    const {
-      data: { user },
-      error,
+    const { data: { user },error,
     } = await supabase.auth.getUser(token);
 
     if (error || !user) {

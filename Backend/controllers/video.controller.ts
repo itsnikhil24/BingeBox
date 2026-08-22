@@ -1,12 +1,10 @@
 import { Request, Response } from "express";
 import fs from "fs";
-import { supabaseAdmin } from "../config/supabase.js";
-import { processVideo } from "../services/ffmpeg.service";
-import { uploadFolder } from "../services/storage.service";
+import { supabaseAdmin } from "../config/supabase";
+import { videoQueue } from "../queues/video.queue";
 
 export const uploadVideo = async (req: Request, res: Response) => {
-  let outputDir = "";
-  let inputFilePath = "";
+  let filePath = "";
 
   try {
     const file = req.file as Express.Multer.File | undefined;
@@ -18,144 +16,108 @@ export const uploadVideo = async (req: Request, res: Response) => {
       });
     }
 
-    inputFilePath = file.path;
+    filePath = file.path;
 
-    const title = req.body.title || "Untitled Video";
-    const description = req.body.description || null;
-    const userId = req.body.user_id;
+    const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(400).json({
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      return res.status(401).json({
         success: false,
-        message: "User ID is required",
+        message: "Unauthorized",
       });
     }
 
-    // Process video using FFmpeg
-    const result = await processVideo(file.path);
+    const title = req.body.title || "Untitled Video";
+    const description = req.body.description || null;
 
-    const folderName = result.folderName;
-    outputDir = result.outputDir;
-
-    // Upload HLS folder to Supabase Storage
-    const streamUrl = await uploadFolder(outputDir, folderName);
-
-    // Insert into videos table
-    const { data: videoRow, error: dbError } = await supabaseAdmin
-      .from("videos")
-      .insert([
-        {
+    const { data: videoRow, error: dbError } =
+      await supabaseAdmin
+        .from("videos")
+        .insert({
           user_id: userId,
           title,
           description,
           thumbnail_url: null,
-          master_playlist: streamUrl,
+          master_playlist: null,
           duration: null,
-          status: "ready",
+          status: "processing",
           visibility: "public",
-        },
-      ])
-      .select()
-      .single();
-
-    console.log("Video Insert Error:", dbError);
+        })
+        .select()
+        .single();
 
     if (dbError) {
-      throw dbError;
+      console.error("DATABASE ERROR:", dbError);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to create video record",
+        error: dbError.message,
+      });
     }
 
-    // Base URL
-    const baseUrl = streamUrl.replace("/master.m3u8", "");
+    try {
+      await videoQueue.add(
+        "transcode",
+        {
+          videoId: videoRow.id,
+          inputPath: filePath,
+        },
+        {
+          jobId: videoRow.id,
+        }
+      );
+    } catch (queueError) {
+      console.error("QUEUE ERROR:", queueError);
 
-    // Insert variants
-    const { error: variantError } = await supabaseAdmin
-      .from("video_variants")
-      .insert([
-        {
-          video_id: videoRow.id,
-          resolution: "360p",
-          playlist_url: `${baseUrl}/360p.m3u8`,
-          bitrate: 800000,
-        },
-        {
-          video_id: videoRow.id,
-          resolution: "480p",
-          playlist_url: `${baseUrl}/480p.m3u8`,
-          bitrate: 1400000,
-        },
-        {
-          video_id: videoRow.id,
-          resolution: "720p",
-          playlist_url: `${baseUrl}/720p.m3u8`,
-          bitrate: 2800000,
-        },
-        {
-          video_id: videoRow.id,
-          resolution: "1080p",
-          playlist_url: `${baseUrl}/1080p.m3u8`,
-          bitrate: 5000000,
-        },
-      ]);
+      await supabaseAdmin
+        .from("videos")
+        .update({
+          status: "failed",
+        })
+        .eq("id", videoRow.id);
 
-    console.log("Variant Insert Error:", variantError);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
 
-    if (variantError) {
-      throw variantError;
+      return res.status(500).json({
+        success: false,
+        message: "Failed to add video processing job",
+        error:
+          queueError instanceof Error
+            ? queueError.message
+            : String(queueError),
+      });
     }
 
-    // Cleanup temporary files
-    if (fs.existsSync(inputFilePath)) {
-      fs.unlinkSync(inputFilePath);
-    }
-
-    if (fs.existsSync(outputDir)) {
-      fs.rmSync(outputDir, { recursive: true, force: true });
-    }
-
-    return res.status(200).json({
+    return res.status(202).json({
       success: true,
-      message: "Video uploaded & processed successfully",
-      data: {
-        video: videoRow,
-        variants: [
-          {
-            resolution: "360p",
-            playlist: `${baseUrl}/360p.m3u8`,
-          },
-          {
-            resolution: "480p",
-            playlist: `${baseUrl}/480p.m3u8`,
-          },
-          {
-            resolution: "720p",
-            playlist: `${baseUrl}/720p.m3u8`,
-          },
-          {
-            resolution: "1080p",
-            playlist: `${baseUrl}/1080p.m3u8`,
-          },
-        ],
-        streamUrl,
-      },
+      message: "Video uploaded successfully and is being processed",
+      video: videoRow,
     });
   } catch (error) {
-    console.error("Upload Error:", error);
+    console.error("UPLOAD ERROR:", error);
 
-    if (inputFilePath && fs.existsSync(inputFilePath)) {
-      fs.unlinkSync(inputFilePath);
-    }
-
-    if (outputDir && fs.existsSync(outputDir)) {
-      fs.rmSync(outputDir, {
-        recursive: true,
-        force: true,
-      });
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
 
     return res.status(500).json({
       success: false,
-      message: "Video processing failed",
-      error: error instanceof Error ? error.message : error,
+      message: "Failed to queue video processing",
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error),
     });
   }
 };
@@ -206,8 +168,6 @@ export const getAllVideos = async (req: Request, res: Response) => {
   }
 };
 
-// Fetch a single video by id, including its HLS quality variants,
-// for use on the watch/streaming page.
 export const getVideoById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -236,7 +196,6 @@ export const getVideoById = async (req: Request, res: Response) => {
         )
       `)
       .eq("id", id)
-      .eq("status", "ready")
       .single();
 
     if (error || !data) {

@@ -5,6 +5,7 @@ import {
   getAllVideos,
   getVideoById,
 } from "../controllers/video.controller";
+import { authenticateUser } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const upload = multer({
 });
 
 // Upload route
-router.post("/upload", upload.single("video"), uploadVideo);
+router.post("/upload", authenticateUser, upload.single("video"), uploadVideo);
 router.get("/", getAllVideos);
 
 // Single video route — must come after "/" since both are GET
