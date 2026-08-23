@@ -1,10 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaFilm, FaSearch, FaUpload, FaUserCircle } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import {
+  FaFilm,
+  FaSearch,
+  FaUpload,
+  FaUserCircle,
+} from "react-icons/fa";
+
 import "./navbar.css";
 
-export default function Navbar({ openUpload, isLoggedIn }) {
-  const navigate = useNavigate();
+export default function Navbar({
+  openUpload,
+  openAuth,
+  isLoggedIn,
+}) {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const handleUploadClick = () => {
@@ -12,25 +21,39 @@ export default function Navbar({ openUpload, isLoggedIn }) {
       setShowLoginPrompt(true);
       return;
     }
+
     openUpload();
+  };
+
+  const handleLoginClick = () => {
+    setShowLoginPrompt(false);
+    openAuth();
   };
 
   return (
     <nav className="navbar">
 
       {/* Left */}
-      <div className="navbar-left">
+      <Link to="/dashboard" className="navbar-left">
         <FaFilm className="logo-icon" />
+
         <h2 className="logo-text">
           Binge<span className="logo-accent">Box</span>
         </h2>
-      </div>
+      </Link>
 
       {/* Center */}
       <div className="navbar-center">
         <div className="search-box">
-          <input type="text" placeholder="Search videos..." />
-          <button className="search-button" aria-label="Search">
+          <input
+            type="text"
+            placeholder="Search videos..."
+          />
+
+          <button
+            className="search-button"
+            aria-label="Search"
+          >
             <FaSearch />
           </button>
         </div>
@@ -38,35 +61,47 @@ export default function Navbar({ openUpload, isLoggedIn }) {
 
       {/* Right */}
       <div className="navbar-right">
+
         <div className="upload-wrapper">
-          <button className="upload-btn" onClick={handleUploadClick}>
+
+          <button
+            className="upload-btn"
+            onClick={handleUploadClick}
+          >
             <FaUpload />
             <span>Upload</span>
           </button>
 
-          {showLoginPrompt && (
+          {showLoginPrompt && !isLoggedIn && (
             <div className="login-prompt">
-              <span>You are not logged in.</span>
+
+              <span>
+                You are not logged in.
+              </span>
+
               <button
                 className="login-btn"
-                onClick={() => navigate("/login")}
+                onClick={handleLoginClick}
               >
                 Login to upload
               </button>
+
               <button
                 className="prompt-close"
                 onClick={() => setShowLoginPrompt(false)}
-                aria-label="Dismiss"
+                aria-label="Close"
               >
                 ×
               </button>
+
             </div>
           )}
+
         </div>
 
         <FaUserCircle className="profile-icon" />
-      </div>
 
+      </div>
     </nav>
   );
 }
