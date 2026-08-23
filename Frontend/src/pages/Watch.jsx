@@ -3,7 +3,10 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import Navbar from "../components/Navbar";
 import VideoPlayer from "../components/VideoPlayer";
+import AuthDialog from "../components/AuthDialog";
+import UploadModal from "../components/UploadModal";
 import { getVideoById } from "../services/videoService";
+import { getCurrentUser } from "../utils/auth";
 import "./watch.css";
 
 export default function Watch() {
@@ -13,6 +16,14 @@ export default function Watch() {
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [user, setUser] = useState(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+
+  useEffect(() => {
+    setUser(getCurrentUser());
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -39,6 +50,29 @@ export default function Watch() {
     };
   }, [id]);
 
+  const handleOpenUpload = () => {
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) {
+      setShowAuth(true);
+      return;
+    }
+
+    setShowUpload(true);
+  };
+
+  const handleOpenAuth = () => {
+    setShowAuth(true);
+  };
+
+  const handleAuthChange = (open) => {
+    setShowAuth(open);
+
+    if (!open) {
+      setUser(getCurrentUser());
+    }
+  };
+
   const uploader =
     video?.profiles?.full_name || video?.profiles?.username || "Unknown Creator";
 
@@ -52,8 +86,11 @@ export default function Watch() {
 
   return (
     <>
-      {/* openUpload isn't relevant on this page, so give it a no-op */}
-      <Navbar openUpload={() => {}} />
+      <Navbar
+        openUpload={handleOpenUpload}
+        openAuth={handleOpenAuth}
+        isLoggedIn={!!user}
+      />
 
       <div className="watch-page">
         <button className="back-link" onClick={() => navigate(-1)}>
@@ -101,6 +138,22 @@ export default function Watch() {
           </>
         )}
       </div>
+
+      {showUpload && user && (
+        <UploadModal
+          close={() => setShowUpload(false)}
+          refreshVideos={() => {
+            setShowUpload(false);
+            navigate("/dashboard");
+          }}
+        />
+      )}
+
+      <AuthDialog
+        open={showAuth}
+        onOpenChange={handleAuthChange}
+        initialMode="login"
+      />
     </>
   );
 }

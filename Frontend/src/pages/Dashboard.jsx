@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
+
 import Navbar from "../components/Navbar";
 import VideoCard from "../components/VideoCard";
 import UploadModal from "../components/UploadModal";
+import AuthDialog from "../components/AuthDialog";
+
 import { getAllVideos } from "../services/videoService";
 import { getCurrentUser } from "../utils/auth";
+
 import "./dashboard.css";
 
 export default function Dashboard() {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
+
     const [showUpload, setShowUpload] = useState(false);
+    const [showAuth, setShowAuth] = useState(false);
+
     const [user, setUser] = useState(null);
 
     const fetchVideos = async () => {
@@ -26,6 +33,7 @@ export default function Dashboard() {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(getCurrentUser());
+
         fetchVideos();
     }, []);
 
@@ -33,26 +41,43 @@ export default function Dashboard() {
         const currentUser = getCurrentUser();
 
         if (!currentUser) {
-            alert("Please login to upload a video.");
-            // or: navigate("/login") if you're using react-router
+            setShowAuth(true);
             return;
         }
 
         setShowUpload(true);
     };
 
+    const handleOpenAuth = () => {
+        setShowAuth(true);
+    };
+
+    const handleAuthChange = (open) => {
+        setShowAuth(open);
+
+        if (!open) {
+            const currentUser = getCurrentUser();
+            setUser(currentUser);
+        }
+    };
 
     return (
         <>
-            <Navbar isLoggedIn={!!user} openUpload={handleOpenUpload} />
+            <Navbar
+                isLoggedIn={!!user}
+                openUpload={handleOpenUpload}
+                openAuth={handleOpenAuth}
+            />
 
             <div className="dashboard">
 
                 <div className="dashboard-header">
                     <h1>Now Screening</h1>
+
                     {!loading && (
                         <p className="video-count">
-                            {videos.length} {videos.length === 1 ? "video" : "videos"} in the feed
+                            {videos.length}{" "}
+                            {videos.length === 1 ? "video" : "videos"} in the feed
                         </p>
                     )}
                 </div>
@@ -60,19 +85,31 @@ export default function Dashboard() {
                 {loading ? (
                     <div className="video-grid">
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="skeleton-card">
+                            <div
+                                key={i}
+                                className="skeleton-card"
+                            >
                                 <div className="skeleton-thumb" />
+
                                 <div className="skeleton-line skeleton-line-short" />
+
                                 <div className="skeleton-line skeleton-line-long" />
                             </div>
                         ))}
                     </div>
+
                 ) : videos.length === 0 ? (
+
                     <div className="empty-state">
                         <h2>No screenings yet</h2>
-                        <p>Upload your first video to fill this feed.</p>
+
+                        <p>
+                            Upload your first video to fill this feed.
+                        </p>
                     </div>
+
                 ) : (
+
                     <div className="video-grid">
                         {videos.map((video) => (
                             <VideoCard
@@ -91,6 +128,12 @@ export default function Dashboard() {
                     refreshVideos={fetchVideos}
                 />
             )}
+
+            <AuthDialog
+                open={showAuth}
+                onOpenChange={handleAuthChange}
+                initialMode="login"
+            />
         </>
     );
 }
