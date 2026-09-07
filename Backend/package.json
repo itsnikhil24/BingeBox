@@ -4,11 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only index.ts",
-    "worker": "ts-node-dev --respawn --transpile-only workers/video.worker.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
+  "dev": "ts-node-dev --respawn --transpile-only index.ts",
+  "worker": "ts-node-dev --respawn --transpile-only workers/video.worker.ts",
+  "build": "tsc",
+  "start": "node dist/index.js",
+  "start:worker": "node dist/workers/video.worker.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

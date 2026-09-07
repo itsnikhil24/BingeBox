@@ -4,7 +4,7 @@ import videoRoutes from "./routes/video.route";
 import authRoutes from "./routes/auth.routes";
 import cors from "cors";
 const app=express();
-const PORT=3000;
+const PORT=process.env.PORT || 3000;
 
 
 app.use(cors());
