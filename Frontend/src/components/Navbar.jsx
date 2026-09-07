@@ -7,7 +7,7 @@ import {
   FaUserCircle,
 } from "react-icons/fa";
 
-import "./navbar.css";
+import "./Navbar.css";
 
 export default function Navbar({
   openUpload,
