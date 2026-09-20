@@ -14,6 +14,13 @@ app.use("/videos", express.static(path.join(__dirname, "output")));
 app.use("/api/video", videoRoutes);
 app.use("/api/auth", authRoutes);
 
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "BingeBox API is healthy",
+  });
+});
+
 app.get("/", (req, res) => {
   res.send("Server is running 🚀");
 });

@@ -7,7 +7,18 @@
 
 ## Active Tasks
 
-_None yet._
+### Deploy BingeBox to AWS via ECR + ECS
+- **Status:** In Progress — ECR repo creation + image build/push commands provided
+- **Requirement:** User wants to deploy the containerized app (frontend, api, worker) to AWS using ECR (image registry) and ECS (container orchestration). First deliverable is the full deployment flow/plan; implementation (task defs, CI/CD, infra) follows once the user confirms direction.
+- **Scope / Edge cases:**
+  - `redis` is a plain container in `docker-compose.yml` today — on ECS this must become a managed **ElastiCache for Redis** instance; ECS tasks are ephemeral and BullMQ needs a stable, persistent broker reachable by both `api` and `worker`.
+  - `Backend/.env` (Supabase keys, Redis URL, etc.) is gitignored and supplied via `env_file` locally — on ECS these must move to **AWS Secrets Manager / SSM Parameter Store**, injected via the task definition's `secrets` block, never baked into the image.
+  - `Frontend/Dockerfile` bakes `VITE_API_BASE_URL` in at **build time** (Vite ARG/ENV) — the API's public URL/domain must be decided (and stable, e.g. an ALB DNS name or custom domain) before the frontend image is built in CI, or the frontend must be rebuilt whenever that URL changes.
+  - Need **3 ECR repositories** (api, worker, frontend) matching the 3 Dockerfiles; `worker` needs no ALB target (no inbound HTTP), just egress to Redis/Supabase.
+  - `worker` concurrency is hardcoded to 1 per process (`workers/video.worker.ts`) — horizontal scaling for transcoding throughput means scaling the ECS **service's task count**, not in-process concurrency.
+  - ffmpeg writes temp files to `uploads/`/`output/` inside the container's ephemeral storage — fine under Fargate's default (20GB, configurable to 200GB) as long as cleanup-on-every-exit-path (already a repo rule) holds; no EFS needed unless large files break that ceiling.
+  - Networking: VPC with public+private subnets, ALB in front of `api` and `frontend` (or frontend served via S3+CloudFront instead of ECS — open decision), security groups scoping worker/api egress to Redis+Supabase only.
+- **Notes:** No code changes yet — this task starts as a planning/flow deliverable. Agent 2 implementation work (task defs, CI/CD pipeline, Terraform/CDK or console steps) is a follow-up once the user picks concrete options (region, Fargate vs EC2 launch type, CI tool, frontend hosting choice).
 
 <!--
 Template for an active task entry (Agent 1 fills this in when scoping):
@@ -29,6 +40,9 @@ Backend port is now env-driven (`process.env.PORT`, default 3000) and matches `D
 
 ### Containerize the frontend for deployment — Completed 2026-09-08
 Added `Frontend/Dockerfile` (Vite build → nginx) + `nginx.conf` (SPA fallback) + `frontend` service in `docker-compose.yml`; also fixed a bad `"root": "github:tanstack/react-query"` dependency and a `navbar.css`/`Navbar.css` case-sensitivity import bug that only broke on Linux/Docker.
+
+### Add Redis password auth support to `redis.ts` — Completed 2026-09-17
+`config/redis.ts` now passes `password: process.env.REDIS_PASSWORD` to the `IORedis` client, optional and backward-compatible with unauthenticated local Redis.
 
 <!--
 Template for a completed task entry (post-scrub, Agent 4 writes this and only this):
