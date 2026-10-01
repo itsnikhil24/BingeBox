@@ -23,10 +23,14 @@ export const processVideo = (
 
         "-filter_complex",
         "[0:v]split=4[v1][v2][v3][v4];" +
-        "[v1]scale=w=640:h=360:force_original_aspect_ratio=decrease[v360];" +
-        "[v2]scale=w=842:h=480:force_original_aspect_ratio=decrease[v480];" +
-        "[v3]scale=w=1280:h=720:force_original_aspect_ratio=decrease[v720];" +
-        "[v4]scale=w=1920:h=1080:force_original_aspect_ratio=decrease[v1080]",
+        "[v1]scale=w=640:h=360:force_original_aspect_ratio=decrease," +
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2[v360];" +
+        "[v2]scale=w=842:h=480:force_original_aspect_ratio=decrease," +
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2[v480];" +
+        "[v3]scale=w=1280:h=720:force_original_aspect_ratio=decrease," +
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2[v720];" +
+        "[v4]scale=w=1920:h=1080:force_original_aspect_ratio=decrease," +
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2[v1080]",
 
         // 360p 
         "-map",
@@ -148,7 +152,7 @@ export const processVideo = (
         `${outputDir}/%v.m3u8`,
       ];
 
-     
+
 
       const ffmpeg = spawn("ffmpeg", args);
 
@@ -158,7 +162,7 @@ export const processVideo = (
 
       ffmpeg.on("close", (code) => {
         if (code === 0) {
-      
+
 
           const names = ["360p", "480p", "720p", "1080p"];
 
