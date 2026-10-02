@@ -1,4 +1,3 @@
-import fs from "fs";
 import { Worker } from "bullmq";
 import { redisConnection } from "../config/redis";
 import { processVideoJob } from "../services/video-processing.service";
@@ -6,29 +5,28 @@ import type { VideoProcessingJob } from "../queues/video.queue";
 
 const worker = new Worker<VideoProcessingJob>(
   "video-processing",
+
   async (job) => {
-    const { videoId, inputPath } = job.data;
+    const { videoId, storagePath } = job.data;
 
-    try {
-      await processVideoJob(videoId, inputPath);
-    } catch (err) {
-      const maxAttempts = job.opts.attempts ?? 1;
-      const isLastAttempt = job.attemptsMade + 1 >= maxAttempts;
+    console.log("Processing video job:", {
+      jobId: job.id,
+      videoId,
+      storagePath,
+    });
 
-      // Delete the source file only when there are no retries left.
-      if (isLastAttempt && inputPath && fs.existsSync(inputPath)) {
-        fs.unlinkSync(inputPath);
-      }
-
-      // Re-throw so BullMQ records the failure and handles retries.
-      throw err;
-    }
+    await processVideoJob(videoId, storagePath);
   },
+
   {
     connection: redisConnection,
     concurrency: 1,
   }
 );
+
+worker.on("completed", (job) => {
+  console.log(`Job ${job.id} completed successfully`);
+});
 
 worker.on("failed", (job, error) => {
   console.error(`Job ${job?.id} failed:`, error);
@@ -39,6 +37,8 @@ worker.on("error", (error) => {
 });
 
 const shutdown = async () => {
+  console.log("Shutting down worker...");
+
   await worker.close();
   await redisConnection.quit();
 

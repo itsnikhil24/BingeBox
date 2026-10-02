@@ -1,11 +1,8 @@
 import { Request, Response } from "express";
-import fs from "fs";
 import { supabaseAdmin } from "../config/supabase";
 import { videoQueue } from "../queues/video.queue";
 
 export const uploadVideo = async (req: Request, res: Response) => {
-  let filePath = "";
-
   try {
     const file = req.file as Express.Multer.File | undefined;
 
@@ -16,15 +13,9 @@ export const uploadVideo = async (req: Request, res: Response) => {
       });
     }
 
-    filePath = file.path;
-
     const userId = req.user?.id;
 
     if (!userId) {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-
       return res.status(401).json({
         success: false,
         message: "Unauthorized",
@@ -53,10 +44,6 @@ export const uploadVideo = async (req: Request, res: Response) => {
     if (dbError) {
       console.error("DATABASE ERROR:", dbError);
 
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-
       return res.status(500).json({
         success: false,
         message: "Failed to create video record",
@@ -64,12 +51,42 @@ export const uploadVideo = async (req: Request, res: Response) => {
       });
     }
 
+    // 2. Upload original video to Supabase Storage
+
+    const storagePath = `original/${videoRow.id}/video.mp4`;
+
+    const { error: uploadError } =
+      await supabaseAdmin.storage
+        .from("videos")
+        .upload(storagePath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false,
+        });
+
+    if (uploadError) {
+      console.error("STORAGE UPLOAD ERROR:", uploadError);
+
+      await supabaseAdmin
+        .from("videos")
+        .update({
+          status: "failed",
+        })
+        .eq("id", videoRow.id);
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upload video to storage",
+        error: uploadError.message,
+      });
+    }
+    // 3. Add Supabase Storage path to BullMQ
+
     try {
       await videoQueue.add(
         "transcode",
         {
           videoId: videoRow.id,
-          inputPath: filePath,
+          storagePath,
         },
         {
           jobId: videoRow.id,
@@ -84,10 +101,6 @@ export const uploadVideo = async (req: Request, res: Response) => {
           status: "failed",
         })
         .eq("id", videoRow.id);
-
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
 
       return res.status(500).json({
         success: false,
@@ -107,13 +120,9 @@ export const uploadVideo = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("UPLOAD ERROR:", error);
 
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
     return res.status(500).json({
       success: false,
-      message: "Failed to queue video processing",
+      message: "Failed to upload video",
       error:
         error instanceof Error
           ? error.message

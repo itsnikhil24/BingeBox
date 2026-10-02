@@ -3,16 +3,40 @@ import { supabaseAdmin } from "../config/supabase";
 import { processVideo } from "./ffmpeg.service";
 import { uploadFolder } from "./storage.service";
 
+// ffmpeg may issue range requests late in a long transcode (e.g. an mp4
+// whose moov atom is at the end), so the URL must outlive the whole job.
+const SOURCE_URL_TTL_SECONDS = 6 * 60 * 60;
+
 export const processVideoJob = async (
   videoId: string,
-  inputFilePath: string
+  storagePath: string
 ) => {
   let outputDir = "";
 
   try {
-  
+    // --------------------------------------------------
+    // 1. Get a signed URL for the original in Supabase
+    //    (ffmpeg streams it directly — no local copy)
+    // --------------------------------------------------
 
-    // Update status to processing
+    const { data: signedData, error: signedError } =
+      await supabaseAdmin.storage
+        .from("videos")
+        .createSignedUrl(storagePath, SOURCE_URL_TTL_SECONDS);
+
+    if (signedError || !signedData) {
+      throw (
+        signedError ||
+        new Error("Failed to create signed URL for source video")
+      );
+    }
+
+    console.log("Streaming source video from storage:", storagePath);
+
+    // --------------------------------------------------
+    // 2. Update status
+    // --------------------------------------------------
+
     await supabaseAdmin
       .from("videos")
       .update({
@@ -20,19 +44,39 @@ export const processVideoJob = async (
       })
       .eq("id", videoId);
 
-    // 1. Run FFmpeg
-    const result = await processVideo(inputFilePath);
+    // --------------------------------------------------
+    // 3. Run FFmpeg
+    // --------------------------------------------------
 
-    const folderName = result.folderName;
+    console.log("Starting FFmpeg...");
+
+    const result = await processVideo(signedData.signedUrl);
+
     outputDir = result.outputDir;
 
-    
+    console.log(
+      "FFmpeg processing completed:",
+      outputDir
+    );
 
-    // 2. Upload HLS files
-    const streamUrl = await uploadFolder(outputDir, folderName);
+    // --------------------------------------------------
+    // 4. Upload HLS output to Supabase
+    // --------------------------------------------------
 
+    const streamUrl = await uploadFolder(
+      outputDir,
+      result.folderName
+    );
 
-    // 3. Update videos table
+    console.log(
+      "HLS uploaded:",
+      streamUrl
+    );
+
+    // --------------------------------------------------
+    // 5. Update video record
+    // --------------------------------------------------
+
     const { data: videoRow, error: videoError } =
       await supabaseAdmin
         .from("videos")
@@ -48,8 +92,14 @@ export const processVideoJob = async (
       throw videoError;
     }
 
-    // 4. Generate variant URLs
-    const baseUrl = streamUrl.replace("/master.m3u8", "");
+    // --------------------------------------------------
+    // 6. Create video variants
+    // --------------------------------------------------
+
+    const baseUrl = streamUrl.replace(
+      "/master.m3u8",
+      ""
+    );
 
     const variants = [
       {
@@ -78,25 +128,22 @@ export const processVideoJob = async (
       },
     ];
 
-    // 5. Insert variants
-    const { error: variantError } = await supabaseAdmin
-      .from("video_variants")
-      .insert(variants);
+    const { error: variantError } =
+      await supabaseAdmin
+        .from("video_variants")
+        .insert(variants);
 
     if (variantError) {
-      await supabaseAdmin
-        .from("videos")
-        .update({ master_playlist: null })
-        .eq("id", videoId);
-
       throw variantError;
     }
 
     return videoRow;
   } catch (error) {
-    console.error(`Processing failed for video ${videoId}:`, error);
+    console.error(
+      `Processing failed for video ${videoId}:`,
+      error
+    );
 
-    // Mark failed
     await supabaseAdmin
       .from("videos")
       .update({
@@ -106,7 +153,11 @@ export const processVideoJob = async (
 
     throw error;
   } finally {
-    if (outputDir && fs.existsSync(outputDir)) {
+    // Delete temporary FFmpeg output
+    if (
+      outputDir &&
+      fs.existsSync(outputDir)
+    ) {
       fs.rmSync(outputDir, {
         recursive: true,
         force: true,

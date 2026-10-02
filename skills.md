@@ -15,7 +15,7 @@ Living document. Agent 4 updates this whenever a task introduces a new library, 
 | @supabase/supabase-js | ^2.110.8 | Auth, Postgres, Storage |
 | bullmq | ^6.2.0 | Job queue (video transcoding) |
 | ioredis | ^6.0.0 | Redis client (BullMQ connection) |
-| multer | ^2.1.1 | Multipart file upload handling |
+| multer | ^2.1.1 | Multipart file upload handling (`memoryStorage` — no disk writes) |
 | cors | ^2.8.6 | CORS middleware |
 | dotenv | ^17.4.2 | Env var loading |
 
@@ -23,12 +23,13 @@ Living document. Agent 4 updates this whenever a task introduces a new library, 
 - **Layering**: `routes/*.route(s).ts` → `middleware/*.middleware.ts` → `controllers/*.controller.ts` → `services/*.service.ts`. Controllers call services; services own external I/O (ffmpeg, Supabase, filesystem).
 - **Dual Supabase client**: `config/supabase.ts` exports `supabase` (anon key, for verifying user JWTs only) and `supabaseAdmin` (service role key, for all privileged reads/writes). Pick the client based on trust level, not convenience.
 - **Auth middleware**: `middleware/auth.middleware.ts` reads `Authorization: Bearer <token>`, calls `supabase.auth.getUser(token)`, attaches result to `req.user` (typed via `types/express.d.ts` global augmentation of `Express.Request`).
-- **Queue/worker split**: `queues/video.queue.ts` defines the `Queue<VideoProcessingJob>` and its retry policy (3 attempts, exponential backoff starting at 5s). `workers/video.worker.ts` defines the `Worker` with `concurrency: 1`, handles SIGTERM/SIGINT for graceful shutdown, and deletes the source upload only on the final failed attempt.
+- **Queue/worker split**: `queues/video.queue.ts` defines the `Queue<VideoProcessingJob>` and its retry policy (3 attempts, exponential backoff starting at 5s). `workers/video.worker.ts` defines the `Worker` with `concurrency: 1` and handles SIGTERM/SIGINT for graceful shutdown. Job payload is `{ videoId, storagePath }` — `storagePath` points at the original in the Supabase `videos` bucket.
 - **Redis connection config**: `config/redis.ts` builds the shared `IORedis` instance entirely from env vars — `REDIS_HOST` (default `127.0.0.1`), `REDIS_PORT` (default `6379`), `REDIS_PASSWORD` (optional, undefined = no auth) — so the same code connects to a local unauthenticated Redis or a password-protected managed instance (e.g. Redis Cloud, ElastiCache) without a code change. TLS (`tls: {}`) is not yet wired in; add it the same way if a target Redis requires encryption-in-transit.
 - **ffmpeg HLS transcode**: `services/ffmpeg.service.ts` spawns a single `ffmpeg` process with `-filter_complex split` into 4 scaled outputs (360p/480p/720p/1080p), `-var_stream_map` to produce one HLS variant playlist per rendition plus a `master.m3u8`, then renames numeric playlist names (`0.m3u8`...) to resolution names and patches references inside `master.m3u8` accordingly.
 - **Storage upload**: `services/storage.service.ts` walks a local folder and uploads every file to the Supabase `videos` bucket at `<folderName>/<file>`, setting content-type by extension (`.m3u8` → `application/vnd.apple.mpegurl`, `.ts` → `video/mp2t`); returns the bucket's public URL for `master.m3u8`.
 - **Response shape convention**: every controller returns `{ success: boolean, message?: string, ...data }` with an appropriate HTTP status code; errors are caught per-handler and logged with a tagged `console.error` (`"UPLOAD ERROR:"`, `"DATABASE ERROR:"`, etc.) before returning a 4xx/5xx JSON body.
-- **Temp file cleanup**: any handler/service that writes to `uploads/` or `output/` removes it in a `finally` or on every error branch — no path should leave orphaned files.
+- **No local storage for raw uploads**: the upload route uses `multer.memoryStorage()`; the controller uploads `req.file.buffer` to Supabase at `original/<videoId>/video.mp4`. The worker never downloads it — it creates a signed URL (`createSignedUrl`, 6h TTL so it outlives long transcodes) and passes the URL straight to ffmpeg as `-i` input.
+- **Temp file cleanup**: the only local writes are the worker's ffmpeg HLS scratch dir under `/tmp/<folder>/`, removed in a `finally` — no path should leave orphaned files.
 
 **Docker**
 - `Dockerfile.api` and `Dockerfile.worker` are both multi-stage (`builder` stage runs `npm ci && npm run build`; runtime stage does `npm ci --omit=dev` and copies `dist/`).

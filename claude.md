@@ -21,13 +21,13 @@ BingeBox/
 They **only** communicate through the `video-processing` BullMQ queue (Redis) and the shared Supabase database/storage — never import worker logic into the API process or vice versa, and never call ffmpeg synchronously from a request handler.
 
 ### Upload → transcode pipeline
-1. `POST /api/video/upload` (multer) saves the raw file to `Backend/uploads/`.
-2. Controller inserts a `videos` row (`status: "processing"`) via `supabaseAdmin`, then enqueues a `video-processing` job (`videoQueue.add`) with `{ videoId, inputPath }`.
+1. `POST /api/video/upload` (multer `memoryStorage`) holds the raw file in memory only — the raw upload is **never written to local disk** (it breaks in deployed/ephemeral containers).
+2. Controller inserts a `videos` row (`status: "processing"`) via `supabaseAdmin`, uploads the buffer to the Supabase `videos` bucket at `original/<videoId>/video.mp4`, then enqueues a `video-processing` job (`videoQueue.add`) with `{ videoId, storagePath }`.
 3. The worker (`workers/video.worker.ts`) picks up the job and calls `processVideoJob` (`services/video-processing.service.ts`), which:
-   - runs ffmpeg (`services/ffmpeg.service.ts`) to produce multi-bitrate HLS output under `Backend/output/`,
+   - creates a signed URL for the original and runs ffmpeg (`services/ffmpeg.service.ts`) reading **directly from that URL**, producing multi-bitrate HLS output in a scratch dir under `/tmp/`,
    - uploads the HLS files to the Supabase `videos` storage bucket (`services/storage.service.ts`),
    - updates the `videos` row to `status: "ready"` with `master_playlist`, and inserts rows into `video_variants`.
-4. Local temp files (`uploads/<file>`, `output/<folder>/`) are cleaned up on both success and final failure — never leave orphaned files on disk.
+4. The HLS scratch dir (`/tmp/<folder>/`) is the only local file I/O in the pipeline and is removed in a `finally` on every exit path. The original stays in Supabase Storage.
 5. On unrecoverable failure the `videos` row is marked `status: "failed"`.
 
 ### Data & auth: Supabase is the single source of truth
@@ -42,7 +42,7 @@ They **only** communicate through the `video-processing` BullMQ queue (Redis) an
 1. Controllers stay thin — DB/ffmpeg/storage logic belongs in `services/`, not `controllers/`.
 2. API and worker are deployed independently (see `Dockerfile.api`, `Dockerfile.worker`, `docker-compose.yml`); a change to one must not silently assume the other is in the same process.
 3. Never bypass the queue for video processing — synchronous ffmpeg calls from an HTTP handler will block the event loop and defeats the reason the worker exists.
-4. Any code path that writes a file to `uploads/` or `output/` must clean it up in every exit path (success, retryable failure, final failure).
+4. Never store uploaded/raw videos on local disk — use Supabase Storage. The only allowed local writes are worker scratch files (ffmpeg HLS output under `/tmp/`), which must be cleaned up in every exit path (success, retryable failure, final failure).
 5. Keep response shape consistent across the API: `{ success: boolean, message?: string, ...payload }`.
 6. `.env` is never committed (see `Backend/.gitignore`); Docker Compose supplies it via `env_file`.
 7. TypeScript backend runs in `strict` mode — don't weaken `tsconfig.json` to silence errors.

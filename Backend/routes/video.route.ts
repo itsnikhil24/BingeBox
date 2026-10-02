@@ -9,9 +9,10 @@ import { authenticateUser } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
-// Multer configuration (stores uploaded files in /uploads)
+// Multer keeps the upload in memory (req.file.buffer); the controller
+// streams it straight to Supabase Storage — nothing is written to local disk.
 const upload = multer({
-  dest: "uploads/",
+  storage: multer.memoryStorage(),
 });
 
 // Upload route

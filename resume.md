@@ -16,7 +16,7 @@
   - `Frontend/Dockerfile` bakes `VITE_API_BASE_URL` in at **build time** (Vite ARG/ENV) — the API's public URL/domain must be decided (and stable, e.g. an ALB DNS name or custom domain) before the frontend image is built in CI, or the frontend must be rebuilt whenever that URL changes.
   - Need **3 ECR repositories** (api, worker, frontend) matching the 3 Dockerfiles; `worker` needs no ALB target (no inbound HTTP), just egress to Redis/Supabase.
   - `worker` concurrency is hardcoded to 1 per process (`workers/video.worker.ts`) — horizontal scaling for transcoding throughput means scaling the ECS **service's task count**, not in-process concurrency.
-  - ffmpeg writes temp files to `uploads/`/`output/` inside the container's ephemeral storage — fine under Fargate's default (20GB, configurable to 200GB) as long as cleanup-on-every-exit-path (already a repo rule) holds; no EFS needed unless large files break that ceiling.
+  - Raw uploads no longer touch disk (Supabase Storage); only the worker's ffmpeg HLS scratch dir under `/tmp/` uses the container's ephemeral storage — fine under Fargate's default (20GB, configurable to 200GB) as long as cleanup-on-every-exit-path (already a repo rule) holds; no EFS needed unless large files break that ceiling.
   - Networking: VPC with public+private subnets, ALB in front of `api` and `frontend` (or frontend served via S3+CloudFront instead of ECS — open decision), security groups scoping worker/api egress to Redis+Supabase only.
 - **Notes:** No code changes yet — this task starts as a planning/flow deliverable. Agent 2 implementation work (task defs, CI/CD pipeline, Terraform/CDK or console steps) is a follow-up once the user picks concrete options (region, Fargate vs EC2 launch type, CI tool, frontend hosting choice).
 
@@ -43,6 +43,9 @@ Added `Frontend/Dockerfile` (Vite build → nginx) + `nginx.conf` (SPA fallback)
 
 ### Add Redis password auth support to `redis.ts` — Completed 2026-09-17
 `config/redis.ts` now passes `password: process.env.REDIS_PASSWORD` to the `IORedis` client, optional and backward-compatible with unauthenticated local Redis.
+
+### Store raw uploads in Supabase Storage instead of local disk — Completed 2026-10-02
+API buffers uploads in memory and pushes them to Supabase Storage; the worker has ffmpeg stream the original from a signed URL, so neither process writes the raw video to disk.
 
 <!--
 Template for a completed task entry (post-scrub, Agent 4 writes this and only this):

@@ -2,8 +2,9 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
 
+// `input` can be a local path or an http(s) URL (e.g. a signed Supabase URL).
 export const processVideo = (
-  inputPath: string
+  input: string
 ): Promise<{
   folderName: string;
   outputDir: string;
@@ -11,7 +12,7 @@ export const processVideo = (
   return new Promise((resolve, reject) => {
     try {
       const folderName = `video_${Date.now()}`;
-      const outputDir = path.join("output", folderName);
+      const outputDir = path.join("/tmp", folderName);
 
       fs.mkdirSync(outputDir, { recursive: true });
 
@@ -19,7 +20,7 @@ export const processVideo = (
         "-hide_banner",
         "-y",
         "-i",
-        inputPath,
+        input,
 
         "-filter_complex",
         "[0:v]split=4[v1][v2][v3][v4];" +
