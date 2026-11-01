@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -62,7 +63,7 @@ function AuthDialog({
       const data = await loginUser(loginForm);
 
       if (!data.success) {
-        alert(data.message);
+        toast.error(data.message || "Something went wrong.");
         return;
       }
 
@@ -81,7 +82,7 @@ function AuthDialog({
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
-      alert("Something went wrong while logging in.");
+      toast.error("Something went wrong while logging in.");
     } finally {
       setLoading(false);
     }
@@ -96,14 +97,13 @@ function AuthDialog({
       const data = await registerUser(registerForm);
 
       if (!data.success) {
-        alert(data.message);
+        toast.error(data.message || "Something went wrong.");
         return;
       }
 
-      alert("Registration successful!");
+      toast.success("Registration successful! Please log in.");
 
-      // Keep the user on the same page.
-      // Switch directly to the login form.
+      
       setMode("login");
 
       setLoginForm({
@@ -112,7 +112,7 @@ function AuthDialog({
       });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong while creating the account.");
+      toast.error("Something went wrong while creating the account.");
     } finally {
       setLoading(false);
     }

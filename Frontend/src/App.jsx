@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Watch from "./pages/Watch";
 import LandingPage from "./pages/LandingPage";
+import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
 
 
       </Routes>
+
+      <Toaster />
 
     </BrowserRouter>
   );

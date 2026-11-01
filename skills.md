@@ -53,6 +53,7 @@ Living document. Agent 4 updates this whenever a task introduces a new library, 
 | hls.js | ^1.6.15 | HLS playback in `VideoPlayer` |
 | video.js | ^8.23.7 | Video player (check which of hls.js/video.js is the active player path before adding features) |
 | lucide-react / react-icons | — | Icons |
+| sonner | ^2.0.8 | Toast notifications (`components/ui/sonner.jsx` wrapper) |
 
 **Patterns in use**
 - **Routing**: single `App.jsx` with `BrowserRouter` → `/` (LandingPage), `/dashboard` (Dashboard), `/watch/:id` (Watch).
@@ -60,6 +61,7 @@ Living document. Agent 4 updates this whenever a task introduces a new library, 
 - **Auth on the client**: no real auth SDK usage — `services/auth.js` calls the backend REST endpoints directly (`${BASE_URL}/api/auth`); session/user are persisted to `localStorage` (`"session"`, `"user"` keys) and read back via `utils/auth.js#getCurrentUser()`.
 - **Video API calls**: `services/videoService.js` uses axios against `${BASE_URL}/api/video`; authenticated calls (`uploadVideo`) pull the access token out of the `localStorage` `"session"` blob and set `Authorization: Bearer <token>` manually per-call (no shared axios instance/interceptor yet).
 - **Component structure**: `components/` holds shared UI (Navbar, AuthDialog, UploadModal, VideoCard, VideoPlayer, AnimatedBackground) each paired with a co-located `.css` file; `components/ui/` holds shadcn-generated primitives (button, dialog, slider, tooltip); `pages/` holds route-level screens, also with co-located `.css` files (Tailwind utility classes are the primary styling mechanism; the `.css` files hold overrides/animations).
+- **User feedback / notifications**: never use `alert()`. Call `toast.success(...)` / `toast.error(...)` from `sonner`; the single `<Toaster />` (dark theme, top-right, `richColors`, close button) is mounted once in `App.jsx` inside `BrowserRouter`, so toasts persist across dialog close and route changes.
 - **Styling**: Tailwind v4 loaded via the Vite plugin (no `tailwind.config.js` — v4 CSS-first config lives in `src/index.css`/`src/styles/theme.css`).
 
 **Docker**

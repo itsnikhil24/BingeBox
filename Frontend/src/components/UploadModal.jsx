@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaCloudUploadAlt, FaFileVideo, FaTimes } from "react-icons/fa";
+import { toast } from "sonner";
 import { uploadVideo } from "../services/videoService";
 import "./uploadmodal.css";
 
@@ -12,7 +13,7 @@ export default function UploadModal({ close, refreshVideos }) {
 
   const handleUpload = async () => {
     if (!video) {
-      alert("Please select a video.");
+      toast.error("Please select a video.");
       return;
     }
 
@@ -22,7 +23,7 @@ export default function UploadModal({ close, refreshVideos }) {
       const user = JSON.parse(localStorage.getItem("user"));
 
       if (!user) {
-        alert("Please login first.");
+        toast.error("Please login first.");
         return;
       }
 
@@ -35,14 +36,14 @@ export default function UploadModal({ close, refreshVideos }) {
 
       await uploadVideo(formData);
 
-      alert("Video uploaded successfully!");
+      toast.success("Video uploaded! It will be ready once processing finishes.");
 
       refreshVideos();
 
       close();
     } catch (err) {
       console.log(err);
-      alert("Upload Failed");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -47,6 +47,9 @@ Added `Frontend/Dockerfile` (Vite build → nginx) + `nginx.conf` (SPA fallback)
 ### Store raw uploads in Supabase Storage instead of local disk — Completed 2026-10-02
 API buffers uploads in memory and pushes them to Supabase Storage; the worker has ffmpeg stream the original from a signed URL, so neither process writes the raw video to disk.
 
+### Replace browser `alert()` with toast notifications — Completed 2026-11-01
+All frontend `alert()` popups now use `sonner` toasts via a global dark-themed `<Toaster />` in `App.jsx`.
+
 <!--
 Template for a completed task entry (post-scrub, Agent 4 writes this and only this):
 
