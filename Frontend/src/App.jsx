@@ -3,10 +3,12 @@ import Dashboard from "./pages/Dashboard";
 import Watch from "./pages/Watch";
 import LandingPage from "./pages/LandingPage";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -21,6 +23,8 @@ function App() {
       </Routes>
 
       <Toaster />
+
+      </AuthProvider>
 
     </BrowserRouter>
   );

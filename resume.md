@@ -50,6 +50,9 @@ API buffers uploads in memory and pushes them to Supabase Storage; the worker ha
 ### Replace browser `alert()` with toast notifications — Completed 2026-11-01
 All frontend `alert()` popups now use `sonner` toasts via a global dark-themed `<Toaster />` in `App.jsx`.
 
+### Secure session storage, frontend user validation, and logout — Completed 2026-11-01
+Auth tokens moved from `localStorage` to httpOnly cookies; frontend verifies the user via `/api/auth/me` (with refresh) in an `AuthProvider` context, and the Navbar has a Logout button backed by `/api/auth/logout`.
+
 <!--
 Template for a completed task entry (post-scrub, Agent 4 writes this and only this):
 

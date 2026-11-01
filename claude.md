@@ -33,7 +33,8 @@ They **only** communicate through the `video-processing` BullMQ queue (Redis) an
 ### Data & auth: Supabase is the single source of truth
 - **Postgres tables**: `profiles`, `videos`, `video_variants`.
 - **Storage bucket** `videos`: HLS segments/playlists, served via public URLs.
-- **Auth**: Supabase Auth issues JWTs on signup/login. There is no server-side session store — every protected request carries `Authorization: Bearer <access_token>`, verified per-request in `middleware/auth.middleware.ts` via `supabase.auth.getUser(token)`.
+- **Auth**: Supabase Auth issues JWTs on login. The API stores the access/refresh tokens in **httpOnly cookies** (`config/cookies.ts`) — tokens never reach frontend JS or `localStorage`. There is no server-side session store — every protected request is verified per-request in `middleware/auth.middleware.ts` via `supabase.auth.getUser(token)`, reading the token from the `bb_access_token` cookie (or an `Authorization: Bearer` header for non-browser clients). `/api/auth/me` returns the verified user, `/api/auth/refresh` rotates tokens from the refresh cookie, `/api/auth/logout` revokes the session and clears cookies.
+- **CORS**: credentialed, with an explicit origin allow-list (`CORS_ORIGINS`) — never `*`.
 - Two Supabase clients exist in `config/supabase.ts` — keep them separate:
   - `supabase` (anon key) — only used to verify user tokens.
   - `supabaseAdmin` (service role key) — used for all privileged DB/storage writes. **Never expose the service role key to the frontend or use it to trust unverified input.**
@@ -48,7 +49,7 @@ They **only** communicate through the `video-processing` BullMQ queue (Redis) an
 7. TypeScript backend runs in `strict` mode — don't weaken `tsconfig.json` to silence errors.
 
 ## Known inconsistencies (flag before "fixing" silently — confirm with user first)
-- `auth.controller.ts` / `auth.routes.ts` have commented-out `me` / `logout` handlers — either finish or remove them, don't leave dead code across commits.
+- The shared anon `supabase` client is used for `signInWithPassword` / `refreshSession` / signup's profile insert; supabase-js keeps the last session in that client's memory, so concurrent requests can run DB calls under another user's JWT. Needs a per-request client (or auth-only usage) — not yet fixed.
 
 ## Coding guidelines
 - **Backend**: TypeScript strict, Express 5, layered as `routes/ → middleware/ → controllers/ → services/`. No `any` without a comment justifying it.

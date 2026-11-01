@@ -6,7 +6,7 @@ import VideoPlayer from "../components/VideoPlayer";
 import AuthDialog from "../components/AuthDialog";
 import UploadModal from "../components/UploadModal";
 import { getVideoById } from "../services/videoService";
-import { getCurrentUser } from "../utils/auth";
+import { useAuth } from "../context/AuthContext";
 import "./watch.css";
 
 export default function Watch() {
@@ -17,13 +17,9 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-
-  useEffect(() => {
-    setUser(getCurrentUser());
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,9 +47,7 @@ export default function Watch() {
   }, [id]);
 
   const handleOpenUpload = () => {
-    const currentUser = getCurrentUser();
-
-    if (!currentUser) {
+    if (!user) {
       setShowAuth(true);
       return;
     }
@@ -67,10 +61,6 @@ export default function Watch() {
 
   const handleAuthChange = (open) => {
     setShowAuth(open);
-
-    if (!open) {
-      setUser(getCurrentUser());
-    }
   };
 
   const uploader =
@@ -89,7 +79,6 @@ export default function Watch() {
       <Navbar
         openUpload={handleOpenUpload}
         openAuth={handleOpenAuth}
-        isLoggedIn={!!user}
       />
 
       <div className="watch-page">

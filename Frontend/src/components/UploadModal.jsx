@@ -2,9 +2,11 @@ import { useState } from "react";
 import { FaCloudUploadAlt, FaFileVideo, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
 import { uploadVideo } from "../services/videoService";
+import { useAuth } from "../context/AuthContext";
 import "./uploadmodal.css";
 
 export default function UploadModal({ close, refreshVideos }) {
+  const { user, setUser } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [video, setVideo] = useState(null);
@@ -18,20 +20,17 @@ export default function UploadModal({ close, refreshVideos }) {
     }
 
     try {
-      setLoading(true);
-
-      const user = JSON.parse(localStorage.getItem("user"));
-
       if (!user) {
         toast.error("Please login first.");
         return;
       }
 
+      setLoading(true);
+
       const formData = new FormData();
 
       formData.append("title", title);
       formData.append("description", description);
-      formData.append("user_id", user.id);
       formData.append("video", video);
 
       await uploadVideo(formData);
@@ -43,6 +42,14 @@ export default function UploadModal({ close, refreshVideos }) {
       close();
     } catch (err) {
       console.log(err);
+
+      if (err.response?.status === 401) {
+        setUser(null);
+        close();
+        toast.error("Your session has expired. Please log in again.");
+        return;
+      }
+
       toast.error("Upload failed. Please try again.");
     } finally {
       setLoading(false);

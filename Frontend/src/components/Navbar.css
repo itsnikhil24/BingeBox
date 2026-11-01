@@ -131,8 +131,53 @@
   color: var(--bb-text);
 }
 
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-name {
+  color: var(--bb-text);
+  font-family: var(--bb-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-btn,
+.signin-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--bb-border);
+  background: transparent;
+  color: var(--bb-text-muted);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-family: var(--bb-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s var(--bb-ease), border-color 0.2s var(--bb-ease);
+}
+
+.logout-btn:hover,
+.signin-btn:hover {
+  color: var(--bb-text);
+  border-color: var(--bb-gold-dim);
+}
+
 @media (max-width: 720px) {
   .navbar-center {
+    display: none;
+  }
+
+  .user-name,
+  .logout-btn span {
     display: none;
   }
 }

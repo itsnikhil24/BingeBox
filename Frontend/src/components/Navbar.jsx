@@ -2,19 +2,29 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaFilm,
+  FaSignOutAlt,
   FaSearch,
   FaUpload,
   FaUserCircle,
 } from "react-icons/fa";
 
+import { toast } from "sonner";
+import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 
 export default function Navbar({
   openUpload,
   openAuth,
-  isLoggedIn,
 }) {
+  const { user, logout } = useAuth();
+  const isLoggedIn = !!user;
+
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success("You have been logged out.");
+  };
 
   const handleUploadClick = () => {
     if (!isLoggedIn) {
@@ -99,7 +109,32 @@ export default function Navbar({
 
         </div>
 
-        <FaUserCircle className="profile-icon" />
+        {isLoggedIn ? (
+          <div className="user-menu">
+            <FaUserCircle className="profile-icon" />
+
+            <span className="user-name">
+              {user.username || user.fullName || user.email}
+            </span>
+
+            <button
+              className="logout-btn"
+              onClick={handleLogout}
+              aria-label="Log out"
+            >
+              <FaSignOutAlt />
+              <span>Logout</span>
+            </button>
+          </div>
+        ) : (
+          <button
+            className="signin-btn"
+            onClick={openAuth}
+          >
+            <FaUserCircle />
+            <span>Login</span>
+          </button>
+        )}
 
       </div>
     </nav>

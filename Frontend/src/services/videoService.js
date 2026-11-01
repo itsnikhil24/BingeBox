@@ -1,5 +1,6 @@
 import axios from "axios";
 import API_BASE_URL from "../config/api";
+import { refreshSession } from "./auth";
 
 const API = `${API_BASE_URL}/api/video`;
 
@@ -8,26 +9,25 @@ export const getAllVideos = async () => {
   return response.data.videos;
 };
 
+// Auth rides on the httpOnly session cookie (withCredentials). If the access
+// token has expired, refresh once and retry; a second 401 propagates so the
+// caller can treat the user as logged out.
 export const uploadVideo = async (formData) => {
-  const sessionString = localStorage.getItem("session");
+  const post = () =>
+    axios.post(`${API}/upload`, formData, { withCredentials: true });
 
-  if (!sessionString) {
-    throw new Error("Session not found. Please login again.");
+  try {
+    const response = await post();
+    return response.data;
+  } catch (err) {
+    if (err.response?.status !== 401) throw err;
+
+    const refreshed = await refreshSession();
+    if (!refreshed.success) throw err;
+
+    const response = await post();
+    return response.data;
   }
-
-  const session = JSON.parse(sessionString);
-
-  if (!session.access_token) {
-    throw new Error("Access token not found. Please login again.");
-  }
-
-  const response = await axios.post(`${API}/upload`, formData, {
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
-
-  return response.data;
 };
 
 export const getVideoById = async (id) => {

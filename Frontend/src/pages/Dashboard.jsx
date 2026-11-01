@@ -6,7 +6,7 @@ import UploadModal from "../components/UploadModal";
 import AuthDialog from "../components/AuthDialog";
 
 import { getAllVideos } from "../services/videoService";
-import { getCurrentUser } from "../utils/auth";
+import { useAuth } from "../context/AuthContext";
 
 import "./dashboard.css";
 
@@ -17,7 +17,7 @@ export default function Dashboard() {
     const [showUpload, setShowUpload] = useState(false);
     const [showAuth, setShowAuth] = useState(false);
 
-    const [user, setUser] = useState(null);
+    const { user } = useAuth();
 
     const fetchVideos = async () => {
         try {
@@ -32,15 +32,11 @@ export default function Dashboard() {
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setUser(getCurrentUser());
-
         fetchVideos();
-    }, []);
+    }, [videos]);
 
     const handleOpenUpload = () => {
-        const currentUser = getCurrentUser();
-
-        if (!currentUser) {
+        if (!user) {
             setShowAuth(true);
             return;
         }
@@ -54,17 +50,11 @@ export default function Dashboard() {
 
     const handleAuthChange = (open) => {
         setShowAuth(open);
-
-        if (!open) {
-            const currentUser = getCurrentUser();
-            setUser(currentUser);
-        }
     };
 
     return (
         <>
             <Navbar
-                isLoggedIn={!!user}
                 openUpload={handleOpenUpload}
                 openAuth={handleOpenAuth}
             />

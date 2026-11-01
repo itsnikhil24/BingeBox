@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { loginUser, registerUser } from "../services/auth";
+import { useAuth } from "../context/AuthContext";
 import "./AuthDialog.css";
 
 function AuthDialog({
@@ -19,6 +20,7 @@ function AuthDialog({
   initialMode = "login",
 }) {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const [mode, setMode] = useState(initialMode);
 
@@ -67,15 +69,9 @@ function AuthDialog({
         return;
       }
 
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-      );
-
-      localStorage.setItem(
-        "session",
-        JSON.stringify(data.session)
-      );
+      // Tokens were set as httpOnly cookies by the backend; only the
+      // public user profile is kept, in memory.
+      setUser(data.user);
 
       onOpenChange(false);
 
